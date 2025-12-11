@@ -37,10 +37,30 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
+    /* Remove all white backgrounds */
+    .main, .block-container, .stApp, [data-testid="stAppViewContainer"],
+    [data-testid="stHeader"], section[data-testid="stSidebar"] {
+        background: #1a1a1a !important;
+    }
+    
     /* Main Container */
     .main {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        padding: 0;
+        background: #1a1a1a !important;
+        padding: 0 !important;
+    }
+    
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        max-width: 100% !important;
+        background: #1a1a1a !important;
+    }
+    
+    /* Remove default Streamlit padding/margins that cause white space */
+    .css-1d391kg, .css-12oz5g7, .css-1dp5vir {
+        background: #1a1a1a !important;
     }
     
     /* Top Header Bar */
@@ -78,13 +98,18 @@ st.markdown("""
     
     /* Chat Container */
     .chat-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
+        max-width: 1400px;
+        margin: 20px auto;
+        padding: 30px;
         background: white;
         border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         min-height: 70vh;
+    }
+    
+    /* Ensure no white overflow */
+    .element-container, .stMarkdown, .stButton {
+        background: transparent !important;
     }
     
     /* Upload Section */
@@ -437,6 +462,19 @@ def main():
     # Main Chat Container
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     
+    # Add extra CSS to override Streamlit defaults
+    st.markdown("""
+    <style>
+        /* Additional override for white backgrounds */
+        div[data-testid="stVerticalBlock"] > div {
+            background: transparent !important;
+        }
+        div[data-testid="column"] {
+            background: transparent !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     # Upload Section (if no blueprint uploaded)
     if not st.session_state.blueprint_uploaded:
         st.markdown("""
@@ -600,22 +638,28 @@ def process_question(question):
     
     # Show loading
     with st.spinner("🤔 Analyzing blueprint..."):
-        # Get file bytes
+        # Always use the full analysis with image for best results
         st.session_state.uploaded_file.seek(0)
         file_bytes = st.session_state.uploaded_file.read()
         
-        # Call API
-        if len(st.session_state.messages) == 1:
-            result = analyze_blueprint_api(
-                file_bytes,
-                st.session_state.uploaded_file.name,
-                question
-            )
+        # Build context from previous messages for follow-ups
+        if len(st.session_state.messages) > 2:
+            context = "Previous conversation:\n"
+            for msg in st.session_state.messages[:-1]:
+                if msg["role"] == "user":
+                    context += f"User asked: {msg['content']}\n"
+                else:
+                    context += f"AI responded: {msg['content'][:200]}...\n"
+            full_question = f"{context}\nNew question: {question}"
         else:
-            result = ask_followup_api(
-                st.session_state.blueprint_id,
-                question
-            )
+            full_question = question
+        
+        # Always call analyze_blueprint_api with the image
+        result = analyze_blueprint_api(
+            file_bytes,
+            st.session_state.uploaded_file.name,
+            full_question
+        )
         
         if result and result.get('success'):
             response = result['analysis']

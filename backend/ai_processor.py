@@ -78,7 +78,7 @@ accurate enough for due diligence, and clear enough for C-suite presentations.""
     
     async def analyze_blueprint(self, image_path: str, question: str) -> Dict[str, Any]:
         """
-        Analyze blueprint image and answer questions
+        Analyze blueprint image and answer questions with full context awareness
         """
         try:
             # Encode the image
@@ -88,19 +88,45 @@ accurate enough for due diligence, and clear enough for C-suite presentations.""
             image_format = image_path.split('.')[-1].lower()
             mime_type = f"image/{image_format}" if image_format != "jpg" else "image/jpeg"
             
-            # Create the message with image
+            # Enhanced prompt that maintains conversation context
+            analysis_instruction = f"""🎯 ANALYSIS REQUEST:
+{question}
+
+📋 INSTRUCTION:
+If this is a follow-up question (referring to "the bedrooms", "that area", "those dimensions", etc.), 
+analyze the SAME blueprint again and provide the specific information requested, referencing your previous analysis.
+
+For follow-up questions:
+- Re-examine the blueprint for the specific detail requested
+- Provide exact measurements and calculations
+- Reference previous findings when relevant
+- Be concise but complete
+
+📊 REQUIRED DETAIL LEVEL:
+- Provide comprehensive, institutional-grade analysis
+- Include ALL specific measurements, counts, and dimensions
+- Use professional architectural terminology
+- Structure your response with clear sections
+- Give executive summary first, then detailed findings
+- Note confidence levels and any assumptions
+- Include actionable insights when needed
+
+Analyze this blueprint with the precision expected by CBRE's Fortune 500 clients."""
+            
+            # Create enhanced message with detailed instructions
             messages = [
                 SystemMessage(content=self.system_prompt),
                 HumanMessage(
                     content=[
                         {
                             "type": "text",
-                            "text": f"Blueprint Analysis Request: {question}\n\nPlease analyze this blueprint thoroughly and answer the question with specific details."
+                            "text": analysis_instruction
                         },
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:{mime_type};base64,{base64_image}"
+                                "url": f"data:{mime_type};base64,{base64_image}",
+                                "detail": "high"  # Request high-detail analysis
                             }
                         }
                     ]
