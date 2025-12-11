@@ -106,7 +106,7 @@ plans and construction documents.
 ### Step 1: Clone Repository
 
 ``` bash
-git clone https://github.com/Kartik-324/BluePrint_Analyzer.git
+git clone https://github.com/Kartik-324/CBRE_BluePrint_Analyzer.git
 cd BluePrint_Analyzer
 ```
 
