@@ -1,3 +1,4 @@
+# backend/main.py
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -54,10 +55,12 @@ async def root():
 async def analyze_blueprint(
     file: UploadFile = File(...),
     question: Optional[str] = Form(None),
-    audio: Optional[UploadFile] = File(None)
+    audio: Optional[UploadFile] = File(None),
+    auto_analyze: bool = Form(True)
 ):
     """
     Analyze blueprint with text or voice question
+    If auto_analyze is True and no question provided, gives comprehensive analysis
     """
     try:
         # Save uploaded blueprint
@@ -79,19 +82,28 @@ async def analyze_blueprint(
             question = voice_handler.transcribe_audio(audio_path)
             os.remove(audio_path)  # Clean up audio file
         
-        # If no question provided, give general analysis
-        if not question:
+        # Automatic comprehensive analysis on first upload
+        if auto_analyze and not question:
+            analysis = await blueprint_analyzer.get_comprehensive_analysis(blueprint_path)
+            analysis_type = "comprehensive"
+            question_used = "Automatic comprehensive analysis"
+        elif not question:
             question = "Please provide a comprehensive analysis of this blueprint including number of rooms, dimensions, layout type, and key features."
-        
-        # Analyze blueprint
-        analysis = await blueprint_analyzer.analyze_blueprint(blueprint_path, question)
+            analysis = await blueprint_analyzer.analyze_blueprint(blueprint_path, question)
+            analysis_type = "general"
+            question_used = question
+        else:
+            analysis = await blueprint_analyzer.analyze_blueprint(blueprint_path, question)
+            analysis_type = "custom"
+            question_used = question
         
         return JSONResponse(content={
             "success": True,
-            "question": question,
+            "question": question_used,
             "analysis": analysis["answer"],
             "confidence": analysis.get("confidence", "high"),
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "analysis_type": analysis_type
         })
     
     except Exception as e:

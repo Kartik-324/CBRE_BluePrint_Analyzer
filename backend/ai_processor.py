@@ -1,3 +1,4 @@
+#backend/ai_processor.py
 import os
 import base64
 from dotenv import load_dotenv
@@ -148,6 +149,87 @@ Analyze this blueprint with the precision expected by CBRE's Fortune 500 clients
                 "confidence": "error",
                 "model": self.model_name
             }
+    
+    async def get_comprehensive_analysis(self, image_path: str) -> Dict[str, Any]:
+        """
+        Automatic comprehensive analysis when blueprint is first uploaded
+        Provides complete details of all rooms, dimensions, and features
+        """
+        question = """Please provide a COMPLETE and DETAILED analysis of this blueprint including:
+
+**1. PROPERTY OVERVIEW**
+   - Property type (residential, commercial, office, etc.)
+   - Total floor area in square feet
+   - Number of floors/levels shown
+   - Building shape and orientation
+
+**2. COMPLETE ROOM INVENTORY** (Count and list EVERY room with individual dimensions)
+   - Bedrooms: Count each bedroom and provide dimensions (length × width in feet)
+   - Bathrooms: Specify full bath, half bath, etc. with dimensions
+   - Kitchen(s): Dimensions and layout type (L-shaped, galley, etc.)
+   - Living Areas: Living room, family room, etc. with dimensions
+   - Dining Areas: Formal dining, breakfast nook, etc. with dimensions
+   - Utility Rooms: Laundry, mechanical room, storage with dimensions
+   - Other Spaces: Home office, den, closets, hallways, foyer, etc. with dimensions
+   - Outdoor Spaces: Patios, balconies, terraces if visible
+
+**3. DETAILED DIMENSIONS**
+   - Overall building dimensions (total length × width)
+   - Individual room dimensions for EACH space identified above
+   - Ceiling heights (if marked on blueprint)
+   - Wall thickness measurements
+   - Door widths and types (single, double, sliding, etc.)
+   - Window dimensions and quantities
+
+**4. ARCHITECTURAL FEATURES & ELEMENTS**
+   - Main entry and all secondary entrances
+   - Total number of doors (interior and exterior)
+   - Total number of windows with placement
+   - Stairs: Location, type, number of steps if visible
+   - Elevators or lifts (if present)
+   - Built-in features: Closets, cabinets, shelving
+   - Fireplaces or special features
+   - Structural elements: Columns, beams, load-bearing walls
+
+**5. BUILDING SYSTEMS** (if visible on blueprint)
+   - HVAC: Furnace location, AC units, vents, ductwork
+   - Electrical: Panel locations, outlet placements, light fixtures
+   - Plumbing: Fixtures in all bathrooms and kitchen, water heater location
+   - Fire Safety: Smoke detectors, fire extinguishers, sprinkler systems
+   - Special systems: Security, smart home features
+
+**6. ACCESSIBILITY & CODE COMPLIANCE**
+   - ADA accessibility features (ramps, wide doorways, etc.)
+   - Emergency exits and egress routes
+   - Handrails and grab bars
+   - Code compliance observations
+   - Safety features noted
+
+**7. LAYOUT & CIRCULATION ASSESSMENT**
+   - Traffic flow patterns and efficiency
+   - Room adjacencies and relationships
+   - Privacy zones (public vs private spaces)
+   - Natural light and ventilation opportunities
+   - Space utilization efficiency
+   - Potential bottlenecks or circulation issues
+
+**8. PROFESSIONAL OBSERVATIONS**
+   - Strengths of the design
+   - Potential concerns or limitations
+   - Suggestions for optimization
+   - Unique or notable design elements
+   - Market appeal considerations
+
+IMPORTANT: 
+- Provide EXACT counts for all rooms
+- Give SPECIFIC dimensions in feet and inches where visible
+- Calculate total square footage
+- Be thorough and leave nothing out
+- Use clear formatting with bullet points
+- If any measurement is not visible, state "Not marked on blueprint"
+"""
+        
+        return await self.analyze_blueprint(image_path, question)
     
     def extract_measurements(self, text: str) -> Dict[str, Any]:
         """
